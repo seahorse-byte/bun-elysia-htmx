@@ -5,45 +5,27 @@ import { html } from '@elysiajs/html';
 const app = new Elysia();
 app.use(swagger()).use(html());
 
-const page = `<html lang="en">
-    <head>
-        <title>Hello bun-elysia-htmx</title>
-        <script src="https://unpkg.com/htmx.org@1.9.5" integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO" crossorigin="anonymous"></script>
-    </head>
-    <body>
-        <h1>Hello bun / elysia / htmx</h1>
-        <form action="/github-profile" method="POST" hx-post="/github-profile">
-          <label for="username"><b>search for github user</b></label>
-          <br/>
-          <br/>
-          <input type="text" name="username" hx-target="#username" placeholder="enter a username"/>
-        </form>
-        <div id="username"></div>
-    </body>
-</html>`;
+app.get('/', () => Bun.file('index.html').text());
 
-// app.get('/', () => ({ vtuber: ['Shirakami OLSI', 'Inugami Korone'] }));
-app.get('/', () => page);
+app.post('/blog', () => `<div> <br/><p>me blog</p></div>`);
 
 app.post(
   '/github-profile',
-  ({ body }) => {
+  async ({ body }) => {
     const { username } = body;
-    const page = `<html lang="en">
-        <head>
-            <title>Hello bun-elysia-htmx</title>
-            <script src="https://unpkg.com/htmx.org@1.9.5" integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO" crossorigin="anonymous"></script>
-        </head>
-        <body>
-            <form action="/github-profile" method="POST" hx-post="/github-profile">
-              <label for="username"><b>search for github user</b></label>
-              <br/>
-              <br/>
-              <input type="text" name="username" hx-target="#username" placeholder="enter a username"/>
-            </form>
-            <div id="username">${username}</div>
-        </body>
-      </html>`;
+    const response = await fetch(`https://api.github.com/users/${username}`);
+    const { avatar_url, html_url, login, name, created_at } = await response.json();
+
+    const page = `
+      <div class="flex font-sans">
+        <div class="relative my-10 flex- flex-col">
+          <img src=${avatar_url} class="w-40 h-40 object-cover rounded-full my-10" loading="lazy" />
+          <h3><em><b>Login:</b></em> <a href=${html_url} class="text-xl" >${login}</a></h3>
+          <h2><em><b>Name:</b></em> ${name}</h2>
+          <p class="text-sm font-bold">Joined on ${new Date(created_at).getFullYear()}</p>
+        </div>
+      </div>
+    `;
 
     return page;
   },
